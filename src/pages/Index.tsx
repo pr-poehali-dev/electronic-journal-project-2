@@ -1,88 +1,154 @@
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import Icon from '@/components/ui/icon';
 
 interface Student {
   id: number;
   name: string;
+  group: string;
   attendance: { [key: string]: 'present' | 'absent' | 'late' };
+  grades: { [subject: string]: { [date: string]: { grade: number; comment?: string; type: 'current' | 'control' | 'final' } } };
+  homework: { subject: string; description: string; dueDate: string; files?: string[] }[];
 }
 
-interface AttendanceStats {
-  totalDays: number;
-  presentDays: number;
-  absentDays: number;
-  lateDays: number;
-  attendanceRate: number;
+interface Teacher {
+  id: number;
+  name: string;
+  subjects: string[];
+  load: number;
+}
+
+interface Schedule {
+  day: string;
+  lessons: { time: string; subject: string; room: string; teacher: string }[];
 }
 
 const Index = () => {
   const [selectedGroup, setSelectedGroup] = useState('Группа 1');
   const [selectedSubject, setSelectedSubject] = useState('Математика');
+  const [selectedDate, setSelectedDate] = useState('01.12');
+  const [gradeDialogOpen, setGradeDialogOpen] = useState(false);
+  const [homeworkDialogOpen, setHomeworkDialogOpen] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState<number | null>(null);
   
   const dates = ['01.12', '02.12', '03.12', '04.12', '05.12'];
   
   const [students, setStudents] = useState<Student[]>([
     { 
       id: 1, 
-      name: 'Иванов Иван Иванович', 
+      name: 'Иванов Иван Иванович',
+      group: 'Группа 1',
       attendance: {
-        '01.12': 'present',
-        '02.12': 'present',
-        '03.12': 'absent',
-        '04.12': 'present',
-        '05.12': 'late'
-      }
+        '01.12': 'present', '02.12': 'present', '03.12': 'absent', '04.12': 'present', '05.12': 'late'
+      },
+      grades: {
+        'Математика': {
+          '01.12': { grade: 5, comment: 'Отлично решил задачи', type: 'current' },
+          '02.12': { grade: 4, type: 'current' },
+          '03.12': { grade: 5, type: 'control' }
+        }
+      },
+      homework: [
+        { subject: 'Математика', description: 'Решить задачи №1-10', dueDate: '03.12', files: ['zadachi.pdf'] },
+        { subject: 'Физика', description: 'Параграф 5, вопросы 1-5', dueDate: '04.12' }
+      ]
     },
     { 
       id: 2, 
-      name: 'Петрова Мария Сергеевна', 
+      name: 'Петрова Мария Сергеевна',
+      group: 'Группа 1',
       attendance: {
-        '01.12': 'present',
-        '02.12': 'late',
-        '03.12': 'present',
-        '04.12': 'present',
-        '05.12': 'present'
-      }
+        '01.12': 'present', '02.12': 'late', '03.12': 'present', '04.12': 'present', '05.12': 'present'
+      },
+      grades: {
+        'Математика': {
+          '01.12': { grade: 4, type: 'current' },
+          '02.12': { grade: 5, type: 'current' },
+          '04.12': { grade: 4, type: 'control' }
+        }
+      },
+      homework: [
+        { subject: 'Математика', description: 'Решить задачи №1-10', dueDate: '03.12' }
+      ]
     },
     { 
       id: 3, 
-      name: 'Сидоров Петр Александрович', 
+      name: 'Сидоров Петр Александрович',
+      group: 'Группа 1',
       attendance: {
-        '01.12': 'absent',
-        '02.12': 'absent',
-        '03.12': 'present',
-        '04.12': 'late',
-        '05.12': 'present'
-      }
+        '01.12': 'absent', '02.12': 'absent', '03.12': 'present', '04.12': 'late', '05.12': 'present'
+      },
+      grades: {
+        'Математика': {
+          '01.12': { grade: 3, type: 'current' },
+          '03.12': { grade: 3, comment: 'Нужно больше практики', type: 'control' }
+        }
+      },
+      homework: []
     },
     { 
       id: 4, 
-      name: 'Козлова Анна Дмитриевна', 
+      name: 'Козлова Анна Дмитриевна',
+      group: 'Группа 1',
       attendance: {
-        '01.12': 'present',
-        '02.12': 'present',
-        '03.12': 'present',
-        '04.12': 'present',
-        '05.12': 'present'
-      }
+        '01.12': 'present', '02.12': 'present', '03.12': 'present', '04.12': 'present', '05.12': 'present'
+      },
+      grades: {
+        'Математика': {
+          '01.12': { grade: 5, type: 'current' },
+          '02.12': { grade: 5, type: 'current' },
+          '03.12': { grade: 5, type: 'control' }
+        }
+      },
+      homework: []
     },
     { 
       id: 5, 
-      name: 'Морозов Алексей Викторович', 
+      name: 'Морозов Алексей Викторович',
+      group: 'Группа 1',
       attendance: {
-        '01.12': 'present',
-        '02.12': 'absent',
-        '03.12': 'absent',
-        '04.12': 'absent',
-        '05.12': 'late'
-      }
+        '01.12': 'present', '02.12': 'absent', '03.12': 'absent', '04.12': 'absent', '05.12': 'late'
+      },
+      grades: {
+        'Математика': {
+          '01.12': { grade: 4, type: 'current' }
+        }
+      },
+      homework: []
+    }
+  ]);
+
+  const [teachers] = useState<Teacher[]>([
+    { id: 1, name: 'Смирнов Иван Петрович', subjects: ['Математика', 'Алгебра'], load: 18 },
+    { id: 2, name: 'Иванова Мария Сергеевна', subjects: ['Физика'], load: 15 },
+    { id: 3, name: 'Петров Алексей Дмитриевич', subjects: ['Химия', 'Биология'], load: 20 }
+  ]);
+
+  const [schedule] = useState<Schedule[]>([
+    {
+      day: 'Понедельник',
+      lessons: [
+        { time: '09:00', subject: 'Математика', room: '201', teacher: 'Смирнов И.П.' },
+        { time: '10:00', subject: 'Физика', room: '305', teacher: 'Иванова М.С.' },
+        { time: '11:00', subject: 'Химия', room: '401', teacher: 'Петров А.Д.' }
+      ]
     },
+    {
+      day: 'Вторник',
+      lessons: [
+        { time: '09:00', subject: 'Алгебра', room: '201', teacher: 'Смирнов И.П.' },
+        { time: '10:00', subject: 'Физика', room: '305', teacher: 'Иванова М.С.' }
+      ]
+    }
   ]);
 
   const toggleAttendance = (studentId: number, date: string) => {
@@ -104,7 +170,18 @@ const Index = () => {
     }));
   };
 
-  const getAttendanceStats = (student: Student): AttendanceStats => {
+  const getAverageGrade = (student: Student, subject: string): number => {
+    const grades = student.grades[subject];
+    if (!grades) return 0;
+    
+    const gradeValues = Object.values(grades).map(g => g.grade);
+    if (gradeValues.length === 0) return 0;
+    
+    const sum = gradeValues.reduce((a, b) => a + b, 0);
+    return Math.round((sum / gradeValues.length) * 10) / 10;
+  };
+
+  const getAttendanceStats = (student: Student) => {
     const values = Object.values(student.attendance);
     const totalDays = values.length;
     const presentDays = values.filter(v => v === 'present').length;
@@ -153,9 +230,16 @@ const Index = () => {
     return 'Clock';
   };
 
+  const getGradeColor = (grade: number) => {
+    if (grade >= 5) return 'bg-green-500 text-white';
+    if (grade >= 4) return 'bg-blue-500 text-white';
+    if (grade >= 3) return 'bg-yellow-500 text-white';
+    return 'bg-red-500 text-white';
+  };
+
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b bg-card">
+      <header className="border-b bg-card sticky top-0 z-50 shadow-sm">
         <div className="container mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-accent flex items-center justify-center">
@@ -166,6 +250,9 @@ const Index = () => {
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon">
               <Icon name="Bell" size={20} />
+            </Button>
+            <Button variant="ghost" size="icon">
+              <Icon name="MessageSquare" size={20} />
             </Button>
             <Button variant="ghost" size="icon">
               <Icon name="Settings" size={20} />
@@ -181,24 +268,24 @@ const Index = () => {
               <Icon name="BookOpen" size={16} />
               <span className="hidden sm:inline">Журнал</span>
             </TabsTrigger>
-            <TabsTrigger value="users" className="flex items-center gap-2">
-              <Icon name="Users" size={16} />
-              <span className="hidden sm:inline">Пользователи</span>
+            <TabsTrigger value="grades" className="flex items-center gap-2">
+              <Icon name="Award" size={16} />
+              <span className="hidden sm:inline">Оценки</span>
             </TabsTrigger>
-            <TabsTrigger value="education" className="flex items-center gap-2">
-              <Icon name="School" size={16} />
-              <span className="hidden sm:inline">Учебный процесс</span>
+            <TabsTrigger value="homework" className="flex items-center gap-2">
+              <Icon name="FileText" size={16} />
+              <span className="hidden sm:inline">Домашние задания</span>
             </TabsTrigger>
             <TabsTrigger value="schedule" className="flex items-center gap-2">
               <Icon name="Calendar" size={16} />
               <span className="hidden sm:inline">Расписание</span>
             </TabsTrigger>
-            <TabsTrigger value="control" className="flex items-center gap-2">
-              <Icon name="ClipboardCheck" size={16} />
-              <span className="hidden sm:inline">Контроль</span>
+            <TabsTrigger value="teachers" className="flex items-center gap-2">
+              <Icon name="Users" size={16} />
+              <span className="hidden sm:inline">Преподаватели</span>
             </TabsTrigger>
             <TabsTrigger value="reports" className="flex items-center gap-2">
-              <Icon name="FileText" size={16} />
+              <Icon name="BarChart3" size={16} />
               <span className="hidden sm:inline">Отчёты</span>
             </TabsTrigger>
           </TabsList>
@@ -338,24 +425,209 @@ const Index = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="users" className="space-y-6">
+          <TabsContent value="grades" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Пользователи</CardTitle>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <div>
+                    <CardTitle>Журнал оценок</CardTitle>
+                    <CardDescription>Текущие, контрольные и итоговые оценки</CardDescription>
+                  </div>
+                  <div className="flex gap-3 w-full sm:w-auto">
+                    <Select value={selectedGroup} onValueChange={setSelectedGroup}>
+                      <SelectTrigger className="w-full sm:w-[180px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Группа 1">Группа 1</SelectItem>
+                        <SelectItem value="Группа 2">Группа 2</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select value={selectedSubject} onValueChange={setSelectedSubject}>
+                      <SelectTrigger className="w-full sm:w-[180px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Математика">Математика</SelectItem>
+                        <SelectItem value="Физика">Физика</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">Раздел управления пользователями в разработке</p>
+                <div className="rounded-lg border overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[300px]">Студент</TableHead>
+                        {dates.map(date => (
+                          <TableHead key={date} className="text-center">{date}</TableHead>
+                        ))}
+                        <TableHead className="text-center">Средний балл</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {students.map(student => {
+                        const avgGrade = getAverageGrade(student, selectedSubject);
+                        return (
+                          <TableRow key={student.id}>
+                            <TableCell className="font-medium">{student.name}</TableCell>
+                            {dates.map(date => {
+                              const gradeData = student.grades[selectedSubject]?.[date];
+                              return (
+                                <TableCell key={date} className="text-center">
+                                  {gradeData ? (
+                                    <Dialog>
+                                      <DialogTrigger asChild>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className={`w-10 h-10 rounded-lg font-semibold ${getGradeColor(gradeData.grade)}`}
+                                        >
+                                          {gradeData.grade}
+                                          {gradeData.type === 'control' && <span className="text-xs ml-1">К</span>}
+                                          {gradeData.type === 'final' && <span className="text-xs ml-1">И</span>}
+                                        </Button>
+                                      </DialogTrigger>
+                                      <DialogContent>
+                                        <DialogHeader>
+                                          <DialogTitle>Оценка</DialogTitle>
+                                          <DialogDescription>
+                                            {student.name} - {selectedSubject} - {date}
+                                          </DialogDescription>
+                                        </DialogHeader>
+                                        <div className="space-y-4">
+                                          <div>
+                                            <Label>Оценка: {gradeData.grade}</Label>
+                                            <Badge className="ml-2">
+                                              {gradeData.type === 'current' && 'Текущая'}
+                                              {gradeData.type === 'control' && 'Контрольная'}
+                                              {gradeData.type === 'final' && 'Итоговая'}
+                                            </Badge>
+                                          </div>
+                                          {gradeData.comment && (
+                                            <div>
+                                              <Label>Комментарий:</Label>
+                                              <p className="text-sm text-muted-foreground mt-1">{gradeData.comment}</p>
+                                            </div>
+                                          )}
+                                        </div>
+                                      </DialogContent>
+                                    </Dialog>
+                                  ) : (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="w-10 h-10 rounded-lg"
+                                      onClick={() => {
+                                        setSelectedStudent(student.id);
+                                        setSelectedDate(date);
+                                        setGradeDialogOpen(true);
+                                      }}
+                                    >
+                                      <Icon name="Plus" size={16} />
+                                    </Button>
+                                  )}
+                                </TableCell>
+                              );
+                            })}
+                            <TableCell className="text-center">
+                              <Badge variant={avgGrade >= 4.5 ? "default" : avgGrade >= 3.5 ? "secondary" : "destructive"} className="font-semibold">
+                                {avgGrade > 0 ? avgGrade : '-'}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
 
-          <TabsContent value="education" className="space-y-6">
+          <TabsContent value="homework" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Учебный процесс</CardTitle>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle>Домашние задания</CardTitle>
+                    <CardDescription>Управление индивидуальными и групповыми заданиями</CardDescription>
+                  </div>
+                  <Dialog open={homeworkDialogOpen} onOpenChange={setHomeworkDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button>
+                        <Icon name="Plus" size={16} className="mr-2" />
+                        Добавить задание
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Новое домашнее задание</DialogTitle>
+                        <DialogDescription>Создайте индивидуальное или групповое задание</DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div>
+                          <Label>Предмет</Label>
+                          <Select>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Выберите предмет" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="math">Математика</SelectItem>
+                              <SelectItem value="physics">Физика</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label>Описание</Label>
+                          <Textarea placeholder="Опишите задание" />
+                        </div>
+                        <div>
+                          <Label>Срок сдачи</Label>
+                          <Input type="date" />
+                        </div>
+                        <div>
+                          <Label>Прикрепить файлы</Label>
+                          <Input type="file" multiple />
+                        </div>
+                        <Button className="w-full">Создать задание</Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">Раздел учебного процесса в разработке</p>
+                <div className="space-y-4">
+                  {students.slice(0, 3).map(student => (
+                    <Card key={student.id}>
+                      <CardHeader>
+                        <CardTitle className="text-base">{student.name}</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        {student.homework.length > 0 ? (
+                          <div className="space-y-2">
+                            {student.homework.map((hw, idx) => (
+                              <div key={idx} className="flex items-center justify-between p-3 border rounded-lg">
+                                <div className="flex items-center gap-3">
+                                  <Icon name="FileText" size={20} className="text-muted-foreground" />
+                                  <div>
+                                    <p className="font-medium">{hw.subject}</p>
+                                    <p className="text-sm text-muted-foreground">{hw.description}</p>
+                                  </div>
+                                </div>
+                                <Badge variant="outline">До {hw.dueDate}</Badge>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">Нет активных заданий</p>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -363,34 +635,130 @@ const Index = () => {
           <TabsContent value="schedule" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Расписание и организация</CardTitle>
+                <CardTitle>Расписание занятий</CardTitle>
+                <CardDescription>Актуальное расписание для {selectedGroup}</CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">Раздел расписания в разработке</p>
+                <div className="space-y-6">
+                  {schedule.map((day, idx) => (
+                    <div key={idx}>
+                      <h3 className="font-semibold mb-3">{day.day}</h3>
+                      <div className="space-y-2">
+                        {day.lessons.map((lesson, lessonIdx) => (
+                          <div key={lessonIdx} className="flex items-center justify-between p-4 border rounded-lg">
+                            <div className="flex items-center gap-4">
+                              <Badge variant="outline" className="w-16 justify-center">{lesson.time}</Badge>
+                              <div>
+                                <p className="font-medium">{lesson.subject}</p>
+                                <p className="text-sm text-muted-foreground">{lesson.teacher}</p>
+                              </div>
+                            </div>
+                            <Badge variant="secondary">Каб. {lesson.room}</Badge>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
 
-          <TabsContent value="control" className="space-y-6">
+          <TabsContent value="teachers" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Контроль и взаимодействие</CardTitle>
+                <CardTitle>Преподаватели</CardTitle>
+                <CardDescription>Список преподавателей и их нагрузка</CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">Раздел контроля в разработке</p>
+                <div className="rounded-lg border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>ФИО</TableHead>
+                        <TableHead>Предметы</TableHead>
+                        <TableHead className="text-center">Нагрузка (часов/нед)</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {teachers.map(teacher => (
+                        <TableRow key={teacher.id}>
+                          <TableCell className="font-medium">{teacher.name}</TableCell>
+                          <TableCell>
+                            <div className="flex gap-2">
+                              {teacher.subjects.map((subject, idx) => (
+                                <Badge key={idx} variant="secondary">{subject}</Badge>
+                              ))}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Badge variant={teacher.load > 18 ? "destructive" : "default"}>
+                              {teacher.load} ч
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
 
           <TabsContent value="reports" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Отчёты</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">Раздел отчётов в разработке</p>
-              </CardContent>
-            </Card>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Отчёт по успеваемости</CardTitle>
+                  <CardDescription>Анализ успеваемости студентов</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button className="w-full">
+                    <Icon name="Download" size={16} className="mr-2" />
+                    Скачать Excel
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Отчёт по посещаемости</CardTitle>
+                  <CardDescription>Статистика посещений</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button className="w-full">
+                    <Icon name="Download" size={16} className="mr-2" />
+                    Скачать PDF
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Отчёт по нагрузке</CardTitle>
+                  <CardDescription>Распределение нагрузки учителей</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button className="w-full">
+                    <Icon name="Download" size={16} className="mr-2" />
+                    Скачать Excel
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Сводный отчёт</CardTitle>
+                  <CardDescription>Общая статистика за период</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button className="w-full">
+                    <Icon name="Download" size={16} className="mr-2" />
+                    Скачать PDF
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
         </Tabs>
       </div>
