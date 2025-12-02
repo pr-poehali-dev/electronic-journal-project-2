@@ -1,15 +1,11 @@
 import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
 import Icon from '@/components/ui/icon';
+import AttendanceTab from '@/components/AttendanceTab';
+import GradesTab from '@/components/GradesTab';
+import HomeworkScheduleTab from '@/components/HomeworkScheduleTab';
+import ReportsTab from '@/components/ReportsTab';
 
 interface Student {
   id: number;
@@ -170,28 +166,6 @@ const Index = () => {
     }));
   };
 
-  const getAverageGrade = (student: Student, subject: string): number => {
-    const grades = student.grades[subject];
-    if (!grades) return 0;
-    
-    const gradeValues = Object.values(grades).map(g => g.grade);
-    if (gradeValues.length === 0) return 0;
-    
-    const sum = gradeValues.reduce((a, b) => a + b, 0);
-    return Math.round((sum / gradeValues.length) * 10) / 10;
-  };
-
-  const getAttendanceStats = (student: Student) => {
-    const values = Object.values(student.attendance);
-    const totalDays = values.length;
-    const presentDays = values.filter(v => v === 'present').length;
-    const absentDays = values.filter(v => v === 'absent').length;
-    const lateDays = values.filter(v => v === 'late').length;
-    const attendanceRate = Math.round((presentDays / totalDays) * 100);
-    
-    return { totalDays, presentDays, absentDays, lateDays, attendanceRate };
-  };
-
   const getOverallStats = () => {
     let totalPresent = 0;
     let totalAbsent = 0;
@@ -217,25 +191,14 @@ const Index = () => {
   };
 
   const overallStats = getOverallStats();
-
-  const getStatusColor = (status: 'present' | 'absent' | 'late') => {
-    if (status === 'present') return 'bg-green-500/10 text-green-700 hover:bg-green-500/20';
-    if (status === 'absent') return 'bg-red-500/10 text-red-700 hover:bg-red-500/20';
-    return 'bg-yellow-500/10 text-yellow-700 hover:bg-yellow-500/20';
-  };
-
-  const getStatusIcon = (status: 'present' | 'absent' | 'late') => {
-    if (status === 'present') return 'Check';
-    if (status === 'absent') return 'X';
-    return 'Clock';
-  };
-
-  const getGradeColor = (grade: number) => {
-    if (grade >= 5) return 'bg-green-500 text-white';
-    if (grade >= 4) return 'bg-blue-500 text-white';
-    if (grade >= 3) return 'bg-yellow-500 text-white';
-    return 'bg-red-500 text-white';
-  };
+  const homeworkScheduleContent = HomeworkScheduleTab({
+    students,
+    teachers,
+    schedule,
+    selectedGroup,
+    homeworkDialogOpen,
+    setHomeworkDialogOpen
+  });
 
   return (
     <div className="min-h-screen bg-background">
@@ -290,475 +253,50 @@ const Index = () => {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="journal" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Общая посещаемость</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-semibold">{overallStats.attendanceRate}%</div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {overallStats.totalPresent} из {overallStats.totalRecords} занятий
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Присутствовали</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-semibold text-green-600">{overallStats.totalPresent}</div>
-                  <p className="text-xs text-muted-foreground mt-1">записей</p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Отсутствовали</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-semibold text-red-600">{overallStats.totalAbsent}</div>
-                  <p className="text-xs text-muted-foreground mt-1">записей</p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Опоздали</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-semibold text-yellow-600">{overallStats.totalLate}</div>
-                  <p className="text-xs text-muted-foreground mt-1">записей</p>
-                </CardContent>
-              </Card>
-            </div>
-
-            <Card>
-              <CardHeader>
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                  <CardTitle>Журнал посещаемости</CardTitle>
-                  <div className="flex gap-3 w-full sm:w-auto">
-                    <Select value={selectedGroup} onValueChange={setSelectedGroup}>
-                      <SelectTrigger className="w-full sm:w-[180px]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Группа 1">Группа 1</SelectItem>
-                        <SelectItem value="Группа 2">Группа 2</SelectItem>
-                        <SelectItem value="Группа 3">Группа 3</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Select value={selectedSubject} onValueChange={setSelectedSubject}>
-                      <SelectTrigger className="w-full sm:w-[180px]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Математика">Математика</SelectItem>
-                        <SelectItem value="Физика">Физика</SelectItem>
-                        <SelectItem value="Химия">Химия</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="rounded-lg border overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-[300px]">Студент</TableHead>
-                        {dates.map(date => (
-                          <TableHead key={date} className="text-center">{date}</TableHead>
-                        ))}
-                        <TableHead className="text-center">Посещаемость</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {students.map(student => {
-                        const stats = getAttendanceStats(student);
-                        return (
-                          <TableRow key={student.id}>
-                            <TableCell className="font-medium">{student.name}</TableCell>
-                            {dates.map(date => (
-                              <TableCell key={date} className="text-center">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className={`w-12 h-12 rounded-lg ${getStatusColor(student.attendance[date])}`}
-                                  onClick={() => toggleAttendance(student.id, date)}
-                                >
-                                  <Icon name={getStatusIcon(student.attendance[date])} size={18} />
-                                </Button>
-                              </TableCell>
-                            ))}
-                            <TableCell className="text-center">
-                              <Badge 
-                                variant={stats.attendanceRate >= 80 ? "default" : stats.attendanceRate >= 60 ? "secondary" : "destructive"}
-                                className="font-semibold"
-                              >
-                                {stats.attendanceRate}%
-                              </Badge>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                </div>
-                <div className="mt-4 flex items-center gap-6 text-sm text-muted-foreground">
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded bg-green-500/20"></div>
-                    <span>Присутствовал</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded bg-red-500/20"></div>
-                    <span>Отсутствовал</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded bg-yellow-500/20"></div>
-                    <span>Опоздал</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          <TabsContent value="journal">
+            <AttendanceTab
+              students={students}
+              dates={dates}
+              selectedGroup={selectedGroup}
+              selectedSubject={selectedSubject}
+              setSelectedGroup={setSelectedGroup}
+              setSelectedSubject={setSelectedSubject}
+              toggleAttendance={toggleAttendance}
+              overallStats={overallStats}
+            />
           </TabsContent>
 
-          <TabsContent value="grades" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                  <div>
-                    <CardTitle>Журнал оценок</CardTitle>
-                    <CardDescription>Текущие, контрольные и итоговые оценки</CardDescription>
-                  </div>
-                  <div className="flex gap-3 w-full sm:w-auto">
-                    <Select value={selectedGroup} onValueChange={setSelectedGroup}>
-                      <SelectTrigger className="w-full sm:w-[180px]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Группа 1">Группа 1</SelectItem>
-                        <SelectItem value="Группа 2">Группа 2</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Select value={selectedSubject} onValueChange={setSelectedSubject}>
-                      <SelectTrigger className="w-full sm:w-[180px]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Математика">Математика</SelectItem>
-                        <SelectItem value="Физика">Физика</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="rounded-lg border overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-[300px]">Студент</TableHead>
-                        {dates.map(date => (
-                          <TableHead key={date} className="text-center">{date}</TableHead>
-                        ))}
-                        <TableHead className="text-center">Средний балл</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {students.map(student => {
-                        const avgGrade = getAverageGrade(student, selectedSubject);
-                        return (
-                          <TableRow key={student.id}>
-                            <TableCell className="font-medium">{student.name}</TableCell>
-                            {dates.map(date => {
-                              const gradeData = student.grades[selectedSubject]?.[date];
-                              return (
-                                <TableCell key={date} className="text-center">
-                                  {gradeData ? (
-                                    <Dialog>
-                                      <DialogTrigger asChild>
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          className={`w-10 h-10 rounded-lg font-semibold ${getGradeColor(gradeData.grade)}`}
-                                        >
-                                          {gradeData.grade}
-                                          {gradeData.type === 'control' && <span className="text-xs ml-1">К</span>}
-                                          {gradeData.type === 'final' && <span className="text-xs ml-1">И</span>}
-                                        </Button>
-                                      </DialogTrigger>
-                                      <DialogContent>
-                                        <DialogHeader>
-                                          <DialogTitle>Оценка</DialogTitle>
-                                          <DialogDescription>
-                                            {student.name} - {selectedSubject} - {date}
-                                          </DialogDescription>
-                                        </DialogHeader>
-                                        <div className="space-y-4">
-                                          <div>
-                                            <Label>Оценка: {gradeData.grade}</Label>
-                                            <Badge className="ml-2">
-                                              {gradeData.type === 'current' && 'Текущая'}
-                                              {gradeData.type === 'control' && 'Контрольная'}
-                                              {gradeData.type === 'final' && 'Итоговая'}
-                                            </Badge>
-                                          </div>
-                                          {gradeData.comment && (
-                                            <div>
-                                              <Label>Комментарий:</Label>
-                                              <p className="text-sm text-muted-foreground mt-1">{gradeData.comment}</p>
-                                            </div>
-                                          )}
-                                        </div>
-                                      </DialogContent>
-                                    </Dialog>
-                                  ) : (
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      className="w-10 h-10 rounded-lg"
-                                      onClick={() => {
-                                        setSelectedStudent(student.id);
-                                        setSelectedDate(date);
-                                        setGradeDialogOpen(true);
-                                      }}
-                                    >
-                                      <Icon name="Plus" size={16} />
-                                    </Button>
-                                  )}
-                                </TableCell>
-                              );
-                            })}
-                            <TableCell className="text-center">
-                              <Badge variant={avgGrade >= 4.5 ? "default" : avgGrade >= 3.5 ? "secondary" : "destructive"} className="font-semibold">
-                                {avgGrade > 0 ? avgGrade : '-'}
-                              </Badge>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
+          <TabsContent value="grades">
+            <GradesTab
+              students={students}
+              dates={dates}
+              selectedGroup={selectedGroup}
+              selectedSubject={selectedSubject}
+              setSelectedGroup={setSelectedGroup}
+              setSelectedSubject={setSelectedSubject}
+              selectedStudent={selectedStudent}
+              selectedDate={selectedDate}
+              gradeDialogOpen={gradeDialogOpen}
+              setSelectedStudent={setSelectedStudent}
+              setSelectedDate={setSelectedDate}
+              setGradeDialogOpen={setGradeDialogOpen}
+            />
           </TabsContent>
 
-          <TabsContent value="homework" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <CardTitle>Домашние задания</CardTitle>
-                    <CardDescription>Управление индивидуальными и групповыми заданиями</CardDescription>
-                  </div>
-                  <Dialog open={homeworkDialogOpen} onOpenChange={setHomeworkDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button>
-                        <Icon name="Plus" size={16} className="mr-2" />
-                        Добавить задание
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Новое домашнее задание</DialogTitle>
-                        <DialogDescription>Создайте индивидуальное или групповое задание</DialogDescription>
-                      </DialogHeader>
-                      <div className="space-y-4">
-                        <div>
-                          <Label>Предмет</Label>
-                          <Select>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Выберите предмет" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="math">Математика</SelectItem>
-                              <SelectItem value="physics">Физика</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div>
-                          <Label>Описание</Label>
-                          <Textarea placeholder="Опишите задание" />
-                        </div>
-                        <div>
-                          <Label>Срок сдачи</Label>
-                          <Input type="date" />
-                        </div>
-                        <div>
-                          <Label>Прикрепить файлы</Label>
-                          <Input type="file" multiple />
-                        </div>
-                        <Button className="w-full">Создать задание</Button>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {students.slice(0, 3).map(student => (
-                    <Card key={student.id}>
-                      <CardHeader>
-                        <CardTitle className="text-base">{student.name}</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        {student.homework.length > 0 ? (
-                          <div className="space-y-2">
-                            {student.homework.map((hw, idx) => (
-                              <div key={idx} className="flex items-center justify-between p-3 border rounded-lg">
-                                <div className="flex items-center gap-3">
-                                  <Icon name="FileText" size={20} className="text-muted-foreground" />
-                                  <div>
-                                    <p className="font-medium">{hw.subject}</p>
-                                    <p className="text-sm text-muted-foreground">{hw.description}</p>
-                                  </div>
-                                </div>
-                                <Badge variant="outline">До {hw.dueDate}</Badge>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="text-sm text-muted-foreground">Нет активных заданий</p>
-                        )}
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+          <TabsContent value="homework">
+            {homeworkScheduleContent.homework}
           </TabsContent>
 
-          <TabsContent value="schedule" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Расписание занятий</CardTitle>
-                <CardDescription>Актуальное расписание для {selectedGroup}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  {schedule.map((day, idx) => (
-                    <div key={idx}>
-                      <h3 className="font-semibold mb-3">{day.day}</h3>
-                      <div className="space-y-2">
-                        {day.lessons.map((lesson, lessonIdx) => (
-                          <div key={lessonIdx} className="flex items-center justify-between p-4 border rounded-lg">
-                            <div className="flex items-center gap-4">
-                              <Badge variant="outline" className="w-16 justify-center">{lesson.time}</Badge>
-                              <div>
-                                <p className="font-medium">{lesson.subject}</p>
-                                <p className="text-sm text-muted-foreground">{lesson.teacher}</p>
-                              </div>
-                            </div>
-                            <Badge variant="secondary">Каб. {lesson.room}</Badge>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+          <TabsContent value="schedule">
+            {homeworkScheduleContent.schedule}
           </TabsContent>
 
-          <TabsContent value="teachers" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Преподаватели</CardTitle>
-                <CardDescription>Список преподавателей и их нагрузка</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="rounded-lg border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>ФИО</TableHead>
-                        <TableHead>Предметы</TableHead>
-                        <TableHead className="text-center">Нагрузка (часов/нед)</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {teachers.map(teacher => (
-                        <TableRow key={teacher.id}>
-                          <TableCell className="font-medium">{teacher.name}</TableCell>
-                          <TableCell>
-                            <div className="flex gap-2">
-                              {teacher.subjects.map((subject, idx) => (
-                                <Badge key={idx} variant="secondary">{subject}</Badge>
-                              ))}
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-center">
-                            <Badge variant={teacher.load > 18 ? "destructive" : "default"}>
-                              {teacher.load} ч
-                            </Badge>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
+          <TabsContent value="teachers">
+            {homeworkScheduleContent.teachers}
           </TabsContent>
 
-          <TabsContent value="reports" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Отчёт по успеваемости</CardTitle>
-                  <CardDescription>Анализ успеваемости студентов</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Button className="w-full">
-                    <Icon name="Download" size={16} className="mr-2" />
-                    Скачать Excel
-                  </Button>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Отчёт по посещаемости</CardTitle>
-                  <CardDescription>Статистика посещений</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Button className="w-full">
-                    <Icon name="Download" size={16} className="mr-2" />
-                    Скачать PDF
-                  </Button>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Отчёт по нагрузке</CardTitle>
-                  <CardDescription>Распределение нагрузки учителей</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Button className="w-full">
-                    <Icon name="Download" size={16} className="mr-2" />
-                    Скачать Excel
-                  </Button>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Сводный отчёт</CardTitle>
-                  <CardDescription>Общая статистика за период</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Button className="w-full">
-                    <Icon name="Download" size={16} className="mr-2" />
-                    Скачать PDF
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
+          <TabsContent value="reports">
+            <ReportsTab />
           </TabsContent>
         </Tabs>
       </div>
