@@ -6,6 +6,9 @@ import AttendanceTab from '@/components/AttendanceTab';
 import GradesTab from '@/components/GradesTab';
 import HomeworkScheduleTab from '@/components/HomeworkScheduleTab';
 import ReportsTab from '@/components/ReportsTab';
+import MessengerTab from '@/components/MessengerTab';
+import AnalyticsTab from '@/components/AnalyticsTab';
+import DiaryTab from '@/components/DiaryTab';
 
 interface Student {
   id: number;
@@ -226,7 +229,7 @@ const Index = () => {
 
       <div className="container mx-auto px-6 py-8">
         <Tabs defaultValue="journal" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6 lg:w-auto">
+          <TabsList className="grid w-full grid-cols-9 lg:w-auto">
             <TabsTrigger value="journal" className="flex items-center gap-2">
               <Icon name="BookOpen" size={16} />
               <span className="hidden sm:inline">Журнал</span>
@@ -234,6 +237,10 @@ const Index = () => {
             <TabsTrigger value="grades" className="flex items-center gap-2">
               <Icon name="Award" size={16} />
               <span className="hidden sm:inline">Оценки</span>
+            </TabsTrigger>
+            <TabsTrigger value="diary" className="flex items-center gap-2">
+              <Icon name="Notebook" size={16} />
+              <span className="hidden sm:inline">Дневник</span>
             </TabsTrigger>
             <TabsTrigger value="homework" className="flex items-center gap-2">
               <Icon name="FileText" size={16} />
@@ -246,6 +253,14 @@ const Index = () => {
             <TabsTrigger value="teachers" className="flex items-center gap-2">
               <Icon name="Users" size={16} />
               <span className="hidden sm:inline">Преподаватели</span>
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="flex items-center gap-2">
+              <Icon name="LineChart" size={16} />
+              <span className="hidden sm:inline">Аналитика</span>
+            </TabsTrigger>
+            <TabsTrigger value="messenger" className="flex items-center gap-2">
+              <Icon name="MessageCircle" size={16} />
+              <span className="hidden sm:inline">Мессенджер</span>
             </TabsTrigger>
             <TabsTrigger value="reports" className="flex items-center gap-2">
               <Icon name="BarChart3" size={16} />
@@ -283,6 +298,10 @@ const Index = () => {
             />
           </TabsContent>
 
+          <TabsContent value="diary">
+            <DiaryTab />
+          </TabsContent>
+
           <TabsContent value="homework">
             {homeworkScheduleContent.homework}
           </TabsContent>
@@ -293,6 +312,14 @@ const Index = () => {
 
           <TabsContent value="teachers">
             {homeworkScheduleContent.teachers}
+          </TabsContent>
+
+          <TabsContent value="analytics">
+            <AnalyticsTab />
+          </TabsContent>
+
+          <TabsContent value="messenger">
+            <MessengerTab />
           </TabsContent>
 
           <TabsContent value="reports">
