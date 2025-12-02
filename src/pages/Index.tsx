@@ -9,6 +9,7 @@ import ReportsTab from '@/components/ReportsTab';
 import MessengerTab from '@/components/MessengerTab';
 import AnalyticsTab from '@/components/AnalyticsTab';
 import DiaryTab from '@/components/DiaryTab';
+import LessonsTab from '@/components/LessonsTab';
 
 interface Student {
   id: number;
@@ -228,8 +229,12 @@ const Index = () => {
       </header>
 
       <div className="container mx-auto px-6 py-8">
-        <Tabs defaultValue="journal" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-9 lg:w-auto">
+        <Tabs defaultValue="lessons" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-10 lg:w-auto">
+            <TabsTrigger value="lessons" className="flex items-center gap-2">
+              <Icon name="GraduationCap" size={16} />
+              <span className="hidden sm:inline">Уроки</span>
+            </TabsTrigger>
             <TabsTrigger value="journal" className="flex items-center gap-2">
               <Icon name="BookOpen" size={16} />
               <span className="hidden sm:inline">Журнал</span>
@@ -267,6 +272,10 @@ const Index = () => {
               <span className="hidden sm:inline">Отчёты</span>
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="lessons">
+            <LessonsTab />
+          </TabsContent>
 
           <TabsContent value="journal">
             <AttendanceTab
